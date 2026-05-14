@@ -3,398 +3,99 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>情感炼金术</title>
+<title>心动成诗</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Noto+Serif+SC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  :root {
-    --bg: #04060f;
-    --surface: rgba(255,255,255,0.04);
-    --surface-hover: rgba(255,255,255,0.08);
-    --border: rgba(255,255,255,0.08);
-    --text: rgba(255,255,255,0.9);
-    --text-muted: rgba(255,255,255,0.4);
-    --tier1: #FFD700;
-    --tier2: #80DEEA;
-    --tier3: #CE93D8;
-    --tier4: #FFB74D;
-  }
-
-  html, body {
-    width: 100%; height: 100%; overflow: hidden;
-    background: var(--bg);
-    font-family: 'Noto Serif SC', serif;
-    color: var(--text);
-    cursor: default;
-    user-select: none;
-  }
-
-  /* ── 星空背景 ── */
-  #canvas-bg {
-    position: fixed; inset: 0;
-    z-index: 0; pointer-events: none;
-  }
-
-  /* ── 布局 ── */
-  #app {
-    position: relative; z-index: 1;
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    grid-template-rows: 60px 1fr;
-    height: 100vh;
-    gap: 0;
-  }
-
-  /* ── 顶栏 ── */
-  #header {
-    grid-column: 1 / -1;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 24px;
-    border-bottom: 1px solid var(--border);
-    background: rgba(4,6,15,0.8);
-    backdrop-filter: blur(10px);
-  }
-  #header h1 {
-    font-family: 'Ma Shan Zheng', cursive;
-    font-size: 22px;
-    background: linear-gradient(135deg, #FFD700, #F48FB1, #80DEEA);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    letter-spacing: 4px;
-  }
-  #header .stats {
-    font-size: 12px; color: var(--text-muted);
-    display: flex; gap: 20px;
-  }
-  #header .stats span { display: flex; align-items: center; gap: 6px; }
-  #header .stats b { color: var(--text); }
-  #hint-bar {
-    font-size: 11px; color: var(--text-muted);
-    font-style: italic; letter-spacing: 1px;
-    min-width: 200px; text-align: right;
-    transition: opacity .4s;
-  }
-
-  /* ── 侧栏：元素库 ── */
-  #sidebar {
-    border-right: 1px solid var(--border);
-    background: rgba(4,6,15,0.6);
-    backdrop-filter: blur(10px);
-    display: flex; flex-direction: column;
-    overflow: hidden;
-  }
-  #sidebar-header {
-    padding: 14px 16px 10px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  #sidebar-header h2 {
-    font-size: 11px; letter-spacing: 3px;
-    color: var(--text-muted); text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  #search {
-    width: 100%; background: var(--surface);
-    border: 1px solid var(--border); border-radius: 6px;
-    padding: 6px 10px; color: var(--text);
-    font-size: 12px; font-family: inherit;
-    outline: none;
-    transition: border-color .2s;
-  }
-  #search:focus { border-color: rgba(255,255,255,0.2); }
-  #search::placeholder { color: var(--text-muted); }
-
-  #tier-tabs {
-    display: flex; gap: 4px; margin-top: 8px;
-  }
-  .tier-tab {
-    flex: 1; padding: 4px; border-radius: 4px;
-    font-size: 10px; text-align: center; cursor: pointer;
-    border: 1px solid transparent;
-    color: var(--text-muted);
-    transition: all .2s;
-  }
-  .tier-tab.active, .tier-tab:hover { color: var(--text); border-color: var(--border); background: var(--surface); }
-
-  #element-list {
-    flex: 1; overflow-y: auto;
-    padding: 8px;
-    display: flex; flex-direction: column; gap: 3px;
-  }
-  #element-list::-webkit-scrollbar { width: 3px; }
-  #element-list::-webkit-scrollbar-track { background: transparent; }
-  #element-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-  .element-item {
-    padding: 8px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    cursor: grab;
-    display: flex; align-items: center; gap: 8px;
-    transition: all .2s;
-    animation: fadeSlideIn .3s ease both;
-  }
-  .element-item:hover {
-    background: var(--surface-hover);
-    border-color: rgba(255,255,255,0.15);
-    transform: translateX(2px);
-  }
-  .element-item:active { cursor: grabbing; }
-  .element-item.is-poem {
-    border-color: rgba(255,183,77,0.3);
-    background: rgba(255,183,77,0.05);
-  }
-  .el-dot {
-    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-    box-shadow: 0 0 6px currentColor;
-  }
-  .el-name { font-size: 13px; flex: 1; }
-  .el-tier {
-    font-size: 9px; color: var(--text-muted);
-    letter-spacing: 1px;
-  }
-  .el-new {
-    font-size: 9px; padding: 1px 5px; border-radius: 3px;
-    background: rgba(255,215,0,0.2); color: #FFD700;
-    letter-spacing: 1px;
-  }
-
-  @keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateX(-8px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
-  /* ── 炼金台 ── */
-  #workspace {
-    position: relative; overflow: hidden;
-  }
-
-  .ws-label {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center; pointer-events: none;
-    opacity: 0.15;
-    transition: opacity .4s;
-  }
-  .ws-label.hidden { opacity: 0; }
-  .ws-label p:first-child {
-    font-family: 'Ma Shan Zheng', cursive;
-    font-size: 36px; letter-spacing: 8px;
-    color: var(--text);
-  }
-  .ws-label p:last-child {
-    font-size: 12px; color: var(--text-muted);
-    letter-spacing: 3px; margin-top: 8px;
-  }
-
-  /* 工作台元素卡片 */
-  .ws-element {
-    position: absolute;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(4,6,15,0.85);
-    backdrop-filter: blur(8px);
-    cursor: grab;
-    display: flex; align-items: center; gap: 8px;
-    transition: box-shadow .2s, transform .1s;
-    min-width: 80px;
-    z-index: 10;
-  }
-  .ws-element:hover {
-    z-index: 100;
-    box-shadow: 0 0 20px var(--el-glow), 0 8px 24px rgba(0,0,0,0.5);
-  }
-  .ws-element:active { cursor: grabbing; transform: scale(1.05); }
-  .ws-element .ws-dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    box-shadow: 0 0 8px var(--el-glow);
-    flex-shrink: 0;
-  }
-  .ws-element .ws-name {
-    font-size: 14px; white-space: nowrap;
-    font-family: 'ZCOOL XiaoWei', serif;
-  }
-  .ws-element .ws-close {
-    font-size: 10px; color: var(--text-muted);
-    cursor: pointer; padding: 2px;
-    transition: color .15s;
-    margin-left: 4px;
-  }
-  .ws-element .ws-close:hover { color: #ff6b6b; }
-  .ws-element.new-element {
-    animation: popIn .4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  @keyframes popIn {
-    from { transform: scale(0) rotate(-10deg); opacity: 0; }
-    to { transform: scale(1) rotate(0deg); opacity: 1; }
-  }
-
-  /* 碰撞波纹 */
-  .ripple {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 200;
-    animation: rippleOut .6s ease-out forwards;
-  }
-  @keyframes rippleOut {
-    from { transform: translate(-50%,-50%) scale(0); opacity: 0.8; }
-    to { transform: translate(-50%,-50%) scale(4); opacity: 0; }
-  }
-
-  /* 拖尾粒子 */
-  .particle {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 5;
-    animation: particleFade .8s ease-out forwards;
-  }
-  @keyframes particleFade {
-    from { transform: scale(1); opacity: 0.7; }
-    to { transform: scale(0); opacity: 0; }
-  }
-
-  /* ── 诗词弹出 ── */
-  #poem-overlay {
-    position: fixed; inset: 0;
-    background: rgba(4,6,15,0.92);
-    backdrop-filter: blur(16px);
-    z-index: 1000;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; pointer-events: none;
-    transition: opacity .5s;
-  }
-  #poem-overlay.show {
-    opacity: 1; pointer-events: all;
-  }
-  #poem-card {
-    max-width: 560px; width: 90%;
-    text-align: center;
-    padding: 60px 48px;
-    position: relative;
-  }
-  #poem-card .poem-label {
-    font-size: 10px; letter-spacing: 4px;
-    color: var(--tier4); margin-bottom: 32px;
-    opacity: 0; transform: translateY(10px);
-    transition: all .6s .3s;
-  }
-  #poem-overlay.show #poem-card .poem-label { opacity: 1; transform: translateY(0); }
-
-  #poem-card .poem-text {
-    font-family: 'Ma Shan Zheng', cursive;
-    font-size: 28px; line-height: 2;
-    color: var(--text);
-    margin-bottom: 40px;
-    opacity: 0; transform: translateY(16px);
-    transition: all .8s .5s;
-  }
-  #poem-overlay.show #poem-card .poem-text { opacity: 1; transform: translateY(0); }
-
-  #poem-card .poem-author {
-    font-size: 14px; color: var(--tier4);
-    letter-spacing: 2px; margin-bottom: 16px;
-    opacity: 0; transition: all .6s .9s;
-  }
-  #poem-overlay.show #poem-card .poem-author { opacity: 1; }
-
-  #poem-card .poem-context {
-    font-size: 13px; color: var(--text-muted);
-    line-height: 2; max-width: 400px; margin: 0 auto 48px;
-    opacity: 0; transition: all .6s 1.1s;
-  }
-  #poem-overlay.show #poem-card .poem-context { opacity: 1; }
-
-  #poem-card .poem-close {
-    font-size: 12px; letter-spacing: 3px;
-    color: var(--text-muted); cursor: pointer;
-    padding: 10px 24px;
-    border: 1px solid var(--border); border-radius: 20px;
-    background: var(--surface);
-    transition: all .2s;
-    opacity: 0; transition: all .3s 1.4s;
-  }
-  #poem-overlay.show #poem-card .poem-close { opacity: 1; }
-  #poem-card .poem-close:hover { background: var(--surface-hover); color: var(--text); }
-
-  /* 诗词粒子画布 */
-  #poem-canvas {
-    position: fixed; inset: 0; z-index: 999;
-    pointer-events: none;
-  }
-
-  /* ── 提示吐司 ── */
-  #toast {
-    position: fixed; bottom: 32px; left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: rgba(20,24,40,0.95);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 10px 24px;
-    font-size: 13px; color: var(--text-muted);
-    letter-spacing: 1px;
-    opacity: 0; pointer-events: none;
-    transition: all .35s;
-    z-index: 900;
-    backdrop-filter: blur(8px);
-    white-space: nowrap;
-  }
-  #toast.show {
-    opacity: 1; transform: translateX(-50%) translateY(0);
-  }
-
-  /* ── 清空按钮 ── */
-  #clear-btn {
-    position: fixed; bottom: 32px; right: 24px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 16px;
-    font-size: 11px; letter-spacing: 2px;
-    color: var(--text-muted); cursor: pointer;
-    font-family: inherit;
-    transition: all .2s;
-    z-index: 50;
-  }
-  #clear-btn:hover { background: var(--surface-hover); color: var(--text); }
-
-  /* ── 进度条 ── */
-  #progress {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    height: 2px; background: transparent; z-index: 50;
-  }
-  #progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #FFD700, #F48FB1, #80DEEA);
-    transition: width .5s ease;
-    box-shadow: 0 0 8px rgba(255,215,0,0.5);
-  }
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --c0:#D4F1F4; --c1:#75E6DA; --c2:#189AB4; --c3:#05445E;
+  --glass:rgba(255,255,255,0.18);
+  --glass-border:rgba(255,255,255,0.35);
+  --text-dark:#05445E; --text-mid:#189AB4;
+}
+html,body { width:100%;height:100%;overflow:hidden;font-family:'Noto Serif SC',serif;color:var(--text-dark);user-select:none;cursor:default; }
+#canvas-bg { position:fixed;inset:0;z-index:0;pointer-events:none; }
+#app { position:relative;z-index:1;display:grid;grid-template-columns:260px 1fr;grid-template-rows:56px 1fr;height:100vh; }
+#header { grid-column:1/-1;display:flex;align-items:center;justify-content:center;position:relative;background:rgba(255,255,255,0.12);backdrop-filter:blur(20px);border-bottom:1px solid var(--glass-border); }
+#header h1 { font-family:'Ma Shan Zheng',cursive;font-size:20px;letter-spacing:6px;color:var(--text-dark);text-shadow:0 1px 0 rgba(255,255,255,0.6); }
+#hint-bar { position:absolute;right:20px;font-size:11px;color:rgba(5,68,94,0.5);letter-spacing:1px;font-style:italic; }
+#sidebar { border-right:1px solid var(--glass-border);background:rgba(255,255,255,0.14);backdrop-filter:blur(24px);display:flex;flex-direction:column;overflow:hidden; }
+#sidebar-top { padding:14px 14px 10px;border-bottom:1px solid rgba(255,255,255,0.2);flex-shrink:0; }
+#sidebar-top h2 { font-size:10px;letter-spacing:3px;color:var(--text-mid);margin-bottom:9px; }
+#search { width:100%;background:rgba(255,255,255,0.3);border:1px solid var(--glass-border);border-radius:20px;padding:6px 14px;color:var(--text-dark);font-size:12px;font-family:inherit;outline:none;transition:background .2s; }
+#search:focus { background:rgba(255,255,255,0.45); }
+#search::placeholder { color:rgba(5,68,94,0.35); }
+#tier-tabs { display:flex;gap:3px;margin-top:9px; }
+.tier-tab { flex:1;padding:4px 2px;border-radius:12px;font-size:10px;text-align:center;cursor:pointer;border:1px solid transparent;color:rgba(5,68,94,0.45);transition:all .2s; }
+.tier-tab.active,.tier-tab:hover { color:var(--text-dark);background:rgba(255,255,255,0.4);border-color:var(--glass-border); }
+#element-list { flex:1;overflow-y:auto;padding:10px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start; }
+#element-list::-webkit-scrollbar { width:3px; }
+#element-list::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.3);border-radius:2px; }
+.element-item { padding:6px 14px;border-radius:999px;border:1px solid var(--glass-border);background:rgba(255,255,255,0.25);backdrop-filter:blur(8px);cursor:grab;font-size:12px;color:var(--text-dark);transition:all .2s;animation:bubbleIn .35s cubic-bezier(0.34,1.56,0.64,1) both;white-space:nowrap;position:relative;box-shadow:0 2px 8px rgba(5,68,94,0.08),inset 0 1px 0 rgba(255,255,255,0.5); }
+.element-item:hover { background:rgba(255,255,255,0.45);transform:translateY(-2px) scale(1.04);box-shadow:0 6px 16px rgba(5,68,94,0.15),inset 0 1px 0 rgba(255,255,255,0.6); }
+.element-item:active { cursor:grabbing;transform:scale(0.97); }
+.element-item.is-poem { border-color:rgba(24,154,180,0.5);background:rgba(117,230,218,0.2); }
+.el-new-dot { position:absolute;top:-2px;right:-2px;width:7px;height:7px;border-radius:50%;background:#ff9f43;border:1px solid white;animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.3);opacity:0.7;} }
+@keyframes bubbleIn { from{opacity:0;transform:scale(0.5) translateY(10px);}to{opacity:1;transform:scale(1) translateY(0);} }
+#workspace { position:relative;overflow:hidden; }
+.ws-hint { position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;transition:opacity .5s; }
+.ws-hint.hidden { opacity:0; }
+.ws-hint-main { font-family:'Ma Shan Zheng',cursive;font-size:32px;letter-spacing:8px;color:rgba(5,68,94,0.2); }
+.ws-hint-sub { font-size:12px;color:rgba(5,68,94,0.18);letter-spacing:3px;margin-top:10px; }
+.ws-bubble { position:absolute;cursor:grab;z-index:10;animation:floatBubble var(--fd,4s) ease-in-out var(--fdelay,0s) infinite; }
+.ws-bubble:active { cursor:grabbing; }
+.ws-bubble:hover { z-index:100; }
+.ws-bubble:hover .bubble-body { transform:scale(1.06); }
+@keyframes floatBubble { 0%,100%{transform:translateY(0px);}50%{transform:translateY(-6px);} }
+.ws-bubble.dragging-now { animation:none!important; }
+.bubble-body { border-radius:999px;padding:9px 20px;display:flex;align-items:center;gap:8px;white-space:nowrap;transition:transform .2s cubic-bezier(0.34,1.4,0.64,1); }
+.bubble-name { font-size:15px;font-family:'ZCOOL XiaoWei',serif;color:var(--text-dark);letter-spacing:1px; }
+.bubble-close { font-size:12px;color:rgba(5,68,94,0.35);cursor:pointer;padding:1px 3px;transition:color .15s,transform .15s;line-height:1; }
+.bubble-close:hover { color:rgba(5,68,94,0.8);transform:scale(1.2); }
+.bubble-pop .bubble-body { animation:popB .45s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes popB { from{transform:scale(0) rotate(-8deg);opacity:0;}to{transform:scale(1) rotate(0deg);opacity:1;} }
+.ripple { position:absolute;border-radius:50%;pointer-events:none;z-index:200;animation:rippleOut .7s ease-out forwards; }
+@keyframes rippleOut { from{transform:translate(-50%,-50%) scale(0);opacity:0.7;}to{transform:translate(-50%,-50%) scale(5);opacity:0;} }
+.trail-drop { position:absolute;border-radius:50%;pointer-events:none;z-index:5;animation:dropFade 1s ease-out forwards; }
+@keyframes dropFade { from{transform:scale(1);opacity:0.5;}to{transform:scale(0);opacity:0;} }
+#poem-overlay { position:fixed;inset:0;z-index:1000;background:linear-gradient(160deg,rgba(5,68,94,0.93) 0%,rgba(24,154,180,0.88) 100%);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .6s; }
+#poem-overlay.show { opacity:1;pointer-events:all; }
+#poem-canvas { position:fixed;inset:0;z-index:999;pointer-events:none; }
+#poem-card { max-width:580px;width:90%;text-align:center;padding:60px 48px; }
+.poem-ornament { font-size:10px;letter-spacing:5px;color:var(--c1);margin-bottom:28px;opacity:0;transform:translateY(8px);transition:all .5s .3s; }
+#poem-overlay.show .poem-ornament { opacity:1;transform:translateY(0); }
+.poem-divider { width:40px;height:1px;background:rgba(117,230,218,0.5);margin:20px auto;opacity:0;transition:all .4s .7s; }
+#poem-overlay.show .poem-divider { opacity:1; }
+#poem-text { font-family:'Ma Shan Zheng',cursive;font-size:26px;line-height:2.2;color:white;margin-bottom:12px;opacity:0;transform:translateY(20px);transition:all .8s .5s;text-shadow:0 2px 20px rgba(117,230,218,0.4); }
+#poem-overlay.show #poem-text { opacity:1;transform:translateY(0); }
+#poem-author { font-size:13px;color:var(--c1);letter-spacing:3px;margin-bottom:8px;opacity:0;transition:all .5s .9s; }
+#poem-overlay.show #poem-author { opacity:1; }
+#poem-context { font-size:13px;color:rgba(255,255,255,0.6);line-height:2;max-width:420px;margin:0 auto 48px;opacity:0;transition:all .5s 1.1s; }
+#poem-overlay.show #poem-context { opacity:1; }
+#poem-close { font-size:11px;letter-spacing:3px;color:rgba(255,255,255,0.6);cursor:pointer;padding:10px 28px;border:1px solid rgba(255,255,255,0.25);border-radius:999px;background:rgba(255,255,255,0.08);font-family:inherit;opacity:0;transition:all .3s 1.4s; }
+#poem-overlay.show #poem-close { opacity:1; }
+#poem-close:hover { background:rgba(255,255,255,0.18);color:white; }
+#toast { position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(14px);background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.6);border-radius:999px;padding:9px 24px;font-size:12px;color:var(--text-dark);letter-spacing:1px;opacity:0;pointer-events:none;transition:all .3s;z-index:900;box-shadow:0 4px 20px rgba(5,68,94,0.15);white-space:nowrap; }
+#toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+#clear-btn { position:fixed;bottom:28px;right:20px;background:rgba(255,255,255,0.2);border:1px solid var(--glass-border);border-radius:999px;padding:7px 18px;font-size:11px;letter-spacing:2px;color:rgba(5,68,94,0.6);cursor:pointer;font-family:inherit;transition:all .2s;z-index:50;backdrop-filter:blur(8px); }
+#clear-btn:hover { background:rgba(255,255,255,0.4);color:var(--text-dark); }
+#wave-decor { position:fixed;bottom:-2px;left:0;right:0;pointer-events:none;z-index:2; }
 </style>
 </head>
 <body>
-
 <canvas id="canvas-bg"></canvas>
 <canvas id="poem-canvas"></canvas>
-
 <div id="app">
   <header id="header">
-    <h1>情 感 炼 金 术</h1>
-    <div class="stats">
-      <span>已解锁 <b id="unlocked-count">10</b> / <b id="total-count">—</b></span>
-      <span>古诗词 <b id="poem-count">0</b></span>
-    </div>
-    <div id="hint-bar">将两个元素拖拽到一起，探索新的情感</div>
+    <h1>心 动 成 诗</h1>
+    <div id="hint-bar">将两种情感相遇，探寻心底的诗句</div>
   </header>
-
   <aside id="sidebar">
-    <div id="sidebar-header">
-      <h2>元素库</h2>
-      <input id="search" type="text" placeholder="搜索情感…" autocomplete="off">
+    <div id="sidebar-top">
+      <h2>情 感 元 素</h2>
+      <input id="search" type="text" placeholder="寻找一种情感…" autocomplete="off">
       <div id="tier-tabs">
         <div class="tier-tab active" data-tier="0">全部</div>
         <div class="tier-tab" data-tier="1">基础</div>
@@ -405,509 +106,209 @@
     </div>
     <div id="element-list"></div>
   </aside>
-
   <main id="workspace">
-    <div class="ws-label" id="ws-label">
-      <p>炼金台</p>
-      <p>从左侧拖入元素，将两个情感组合</p>
+    <div class="ws-hint" id="ws-hint">
+      <div class="ws-hint-main">心 动 成 诗</div>
+      <div class="ws-hint-sub">拖入情感，让它们相遇</div>
     </div>
   </main>
 </div>
-
+<svg id="wave-decor" viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <path d="M0,30 C240,60 480,0 720,30 C960,60 1200,0 1440,30 L1440,60 L0,60 Z" fill="rgba(255,255,255,0.12)"/>
+  <path d="M0,45 C360,15 720,55 1080,35 C1260,25 1380,42 1440,48 L1440,60 L0,60 Z" fill="rgba(255,255,255,0.08)"/>
+</svg>
 <div id="poem-overlay">
-  <canvas id="poem-particles-canvas" style="position:fixed;inset:0;z-index:-1;pointer-events:none;"></canvas>
   <div id="poem-card">
-    <div class="poem-label">✦ 解锁古诗词 ✦</div>
-    <div class="poem-text" id="poem-text"></div>
-    <div class="poem-author" id="poem-author"></div>
-    <div class="poem-context" id="poem-context"></div>
-    <button class="poem-close" id="poem-close">收藏此诗，继续炼化</button>
+    <div class="poem-ornament">✦ · 解锁古诗词 · ✦</div>
+    <div id="poem-text"></div>
+    <div class="poem-divider"></div>
+    <div id="poem-author"></div>
+    <div id="poem-context"></div>
+    <button id="poem-close">收入心间，继续探寻</button>
   </div>
 </div>
-
 <div id="toast"></div>
-<button id="clear-btn">清空炼金台</button>
-<div id="progress"><div id="progress-bar" style="width:0%"></div></div>
-
+<button id="clear-btn">清 空</button>
 <script src="data.js"></script>
 <script>
-// ── 状态 ──────────────────────────────────────────────────────
-const state = {
-  unlocked: new Set(Object.keys(ELEMENTS).filter(k => ELEMENTS[k].tier === 1)),
-  newlyUnlocked: new Set(),
-  wsElements: [],
-  dragging: null,
-  dragOffX: 0, dragOffY: 0,
-  filterTier: 0,
-  searchQuery: '',
-};
-
-// 构建组合查找表
+const state = { unlocked:new Set(Object.keys(ELEMENTS).filter(k=>ELEMENTS[k].tier===1)), newlyUnlocked:new Set(), filterTier:0, searchQuery:'' };
 const comboMap = new Map();
-COMBINATIONS.forEach(([a, b, result]) => {
-  const key1 = `${a}||${b}`;
-  const key2 = `${b}||${a}`;
-  comboMap.set(key1, result);
-  comboMap.set(key2, result);
-});
+COMBINATIONS.forEach(([a,b,r])=>{ comboMap.set(a+'||'+b,r); comboMap.set(b+'||'+a,r); });
+function lookupCombo(a,b){ return comboMap.get(a+'||'+b); }
 
-function lookupCombo(a, b) { return comboMap.get(`${a}||${b}`) || comboMap.get(`${b}||${a}`); }
-
-// ── 星空画布 ──────────────────────────────────────────────────
-const bgCanvas = document.getElementById('canvas-bg');
-const bgCtx = bgCanvas.getContext('2d');
-let stars = [];
-let shootingStars = [];
-
-function initStars() {
-  bgCanvas.width = window.innerWidth;
-  bgCanvas.height = window.innerHeight;
-  stars = Array.from({length: 220}, () => ({
-    x: Math.random() * bgCanvas.width,
-    y: Math.random() * bgCanvas.height,
-    r: Math.random() * 1.5 + 0.3,
-    alpha: Math.random() * 0.6 + 0.2,
-    speed: Math.random() * 0.003 + 0.001,
-    phase: Math.random() * Math.PI * 2,
-  }));
+// Background
+const bgC = document.getElementById('canvas-bg'), bgX = bgC.getContext('2d');
+let orbs=[];
+function initBg(){
+  bgC.width=window.innerWidth; bgC.height=window.innerHeight;
+  orbs=Array.from({length:7},(_,i)=>({ x:Math.random()*bgC.width, y:Math.random()*bgC.height, r:180+Math.random()*200, vx:(Math.random()-.5)*.3, vy:(Math.random()-.5)*.3, hue:[185,175,195,200,170][i%5], alpha:.1+Math.random()*.08, phase:Math.random()*Math.PI*2 }));
 }
-
-function spawnShootingStar() {
-  if (Math.random() > 0.003) return;
-  shootingStars.push({
-    x: Math.random() * bgCanvas.width,
-    y: Math.random() * bgCanvas.height * 0.5,
-    vx: (Math.random() * 3 + 2),
-    vy: (Math.random() * 2 + 1),
-    len: Math.random() * 80 + 40,
-    alpha: 1,
-    life: 1,
+function drawBg(t){
+  bgX.clearRect(0,0,bgC.width,bgC.height);
+  const g=bgX.createLinearGradient(0,0,bgC.width*.6,bgC.height);
+  g.addColorStop(0,'#75E6DA'); g.addColorStop(.45,'#189AB4'); g.addColorStop(1,'#05445E');
+  bgX.fillStyle=g; bgX.fillRect(0,0,bgC.width,bgC.height);
+  orbs.forEach(o=>{
+    o.x+=o.vx; o.y+=o.vy;
+    if(o.x<-o.r)o.x=bgC.width+o.r; if(o.x>bgC.width+o.r)o.x=-o.r;
+    if(o.y<-o.r)o.y=bgC.height+o.r; if(o.y>bgC.height+o.r)o.y=-o.r;
+    const p=1+.05*Math.sin(t*.01+o.phase);
+    const og=bgX.createRadialGradient(o.x,o.y,0,o.x,o.y,o.r*p);
+    og.addColorStop(0,`hsla(${o.hue},80%,78%,${o.alpha})`); og.addColorStop(1,'transparent');
+    bgX.fillStyle=og; bgX.beginPath(); bgX.arc(o.x,o.y,o.r*p,0,Math.PI*2); bgX.fill();
   });
-}
-
-function drawBg(t) {
-  bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
-  bgCtx.fillStyle = '#04060f';
-  bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
-
-  // subtle nebula
-  const grad = bgCtx.createRadialGradient(bgCanvas.width * 0.3, bgCanvas.height * 0.4, 0, bgCanvas.width * 0.3, bgCanvas.height * 0.4, bgCanvas.width * 0.5);
-  grad.addColorStop(0, 'rgba(100,60,160,0.04)');
-  grad.addColorStop(1, 'transparent');
-  bgCtx.fillStyle = grad;
-  bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
-
-  stars.forEach(s => {
-    const alpha = s.alpha * (0.7 + 0.3 * Math.sin(t * s.speed + s.phase));
-    bgCtx.beginPath();
-    bgCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    bgCtx.fillStyle = `rgba(255,255,255,${alpha})`;
-    bgCtx.fill();
-  });
-
-  spawnShootingStar();
-  shootingStars = shootingStars.filter(ss => {
-    ss.x += ss.vx; ss.y += ss.vy; ss.life -= 0.02;
-    if (ss.life <= 0) return false;
-    bgCtx.beginPath();
-    bgCtx.moveTo(ss.x, ss.y);
-    bgCtx.lineTo(ss.x - ss.vx * (ss.len / 5), ss.y - ss.vy * (ss.len / 5));
-    const g = bgCtx.createLinearGradient(ss.x, ss.y, ss.x - ss.vx * 10, ss.y - ss.vy * 10);
-    g.addColorStop(0, `rgba(255,255,255,${ss.life})`);
-    g.addColorStop(1, 'transparent');
-    bgCtx.strokeStyle = g;
-    bgCtx.lineWidth = 1.5;
-    bgCtx.stroke();
-    return true;
-  });
-}
-
-// ── 诗词粒子 ──────────────────────────────────────────────────
-const pCanvas = document.getElementById('poem-particles-canvas');
-const pCtx = pCanvas.getContext('2d');
-let pParticles = [];
-let pAnimId;
-
-const PARTICLE_COLORS = {
-  purple: ['#CE93D8','#AB47BC','#E1BEE7'],
-  red: ['#EF9A9A','#E53935','#FFCDD2'],
-  green: ['#A5D6A7','#4CAF50','#E8F5E9'],
-  blue: ['#90CAF9','#1E88E5','#E3F2FD'],
-  gold: ['#FFD700','#FFB300','#FFF9C4'],
-  pink: ['#F48FB1','#E91E63','#FCE4EC'],
-  cyan: ['#80DEEA','#00ACC1','#E0F7FA'],
-  orange: ['#FFAB91','#F4511E','#FBE9E7'],
-  indigo: ['#9FA8DA','#3949AB','#E8EAF6'],
-  gray: ['#CFD8DC','#78909C','#ECEFF1'],
-};
-
-function spawnPoemParticles(colorKey) {
-  pCanvas.width = window.innerWidth;
-  pCanvas.height = window.innerHeight;
-  pParticles = [];
-  const colors = PARTICLE_COLORS[colorKey] || PARTICLE_COLORS.gold;
-  for (let i = 0; i < 80; i++) {
-    pParticles.push({
-      x: Math.random() * pCanvas.width,
-      y: Math.random() * pCanvas.height,
-      vx: (Math.random() - 0.5) * 1.5,
-      vy: (Math.random() - 0.5) * 1.5 - 0.5,
-      r: Math.random() * 3 + 1,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      alpha: Math.random() * 0.6 + 0.3,
-      life: Math.random() * 0.5 + 0.5,
-    });
+  // water highlight lines
+  for(let i=0;i<5;i++){
+    const y=bgC.height*(.2+i*.18)+Math.sin(t*.008+i)*15;
+    const wg=bgX.createLinearGradient(0,y,bgC.width,y);
+    wg.addColorStop(0,'transparent'); wg.addColorStop(.4+Math.sin(t*.005+i)*.15,'rgba(255,255,255,0.055)'); wg.addColorStop(1,'transparent');
+    bgX.fillStyle=wg; bgX.fillRect(0,y-1,bgC.width,2);
+  }
+  // rising bubbles
+  for(let i=0;i<12;i++){
+    const bx=(bgC.width*(i/12))+Math.sin(t*.007+i*1.3)*28;
+    const by=(bgC.height+60)-((t*.4+i*90)%(bgC.height+130));
+    const br=2+(i%4)*1.8;
+    bgX.beginPath(); bgX.arc(bx,by,br,0,Math.PI*2);
+    bgX.strokeStyle=`rgba(255,255,255,${.08+(i%3)*.04})`; bgX.lineWidth=.8; bgX.stroke();
+    bgX.beginPath(); bgX.arc(bx-br*.3,by-br*.3,br*.3,0,Math.PI*2);
+    bgX.fillStyle='rgba(255,255,255,0.12)'; bgX.fill();
   }
 }
 
-function animatePoemParticles() {
-  pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
-  pParticles = pParticles.filter(p => {
-    p.x += p.vx; p.y += p.vy; p.life -= 0.004;
-    if (p.life <= 0) return false;
-    pCtx.beginPath();
-    pCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-    pCtx.fillStyle = p.color + Math.floor(p.alpha * p.life * 255).toString(16).padStart(2,'0');
-    pCtx.fill();
+// Poem particles
+const pC=document.getElementById('poem-canvas'), pX=pC.getContext('2d');
+let pParts=[],pAnim;
+const PCOLS={ purple:['#CE93D8','#E1BEE7'], red:['#EF9A9A','#FFCDD2'], green:['#A5D6A7','#E8F5E9'], blue:['#D4F1F4','#75E6DA','#189AB4'], gold:['#FFD700','#FFF9C4'], pink:['#F48FB1','#FCE4EC'], cyan:['#80DEEA','#E0F7FA'], orange:['#FFAB91','#FBE9E7'], indigo:['#9FA8DA','#E8EAF6'], gray:['#CFD8DC','#ECEFF1'] };
+function spawnPoem(ck){
+  pC.width=window.innerWidth; pC.height=window.innerHeight; pParts=[];
+  const cols=PCOLS[ck]||PCOLS.blue;
+  for(let i=0;i<90;i++) pParts.push({x:Math.random()*pC.width,y:pC.height+Math.random()*80,vx:(Math.random()-.5)*1.2,vy:-(Math.random()*1.5+.5),r:Math.random()*4+1,col:cols[Math.floor(Math.random()*cols.length)],life:.6+Math.random()*.4});
+}
+function animPoem(){
+  pX.clearRect(0,0,pC.width,pC.height);
+  const ov=document.getElementById('poem-overlay'), ck=ov.dataset.colorKey||'blue', cols=PCOLS[ck]||PCOLS.blue;
+  pParts=pParts.filter(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.life-=.003; if(p.life<=0)return false;
+    pX.beginPath(); pX.arc(p.x,p.y,p.r,0,Math.PI*2);
+    pX.fillStyle=p.col+Math.floor(p.life*200).toString(16).padStart(2,'0'); pX.fill();
+    pX.beginPath(); pX.arc(p.x-p.r*.3,p.y-p.r*.3,p.r*.3,0,Math.PI*2);
+    pX.fillStyle=`rgba(255,255,255,${p.life*.25})`; pX.fill();
     return true;
   });
-  // replenish
-  if (pParticles.length < 60 && document.getElementById('poem-overlay').classList.contains('show')) {
-    const colorKey = document.getElementById('poem-overlay').dataset.colorKey || 'gold';
-    const colors = PARTICLE_COLORS[colorKey] || PARTICLE_COLORS.gold;
-    for (let i = 0; i < 5; i++) {
-      pParticles.push({
-        x: Math.random() * pCanvas.width,
-        y: pCanvas.height + 10,
-        vx: (Math.random() - 0.5) * 1.5,
-        vy: -Math.random() * 2 - 0.5,
-        r: Math.random() * 3 + 1,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        alpha: Math.random() * 0.5 + 0.3,
-        life: 0.9,
-      });
-    }
+  if(pParts.length<50&&ov.classList.contains('show')){
+    for(let i=0;i<4;i++) pParts.push({x:Math.random()*pC.width,y:pC.height+10,vx:(Math.random()-.5)*1.2,vy:-(Math.random()*1.5+.5),r:Math.random()*4+1,col:cols[Math.floor(Math.random()*cols.length)],life:.8});
   }
-  pAnimId = requestAnimationFrame(animatePoemParticles);
+  pAnim=requestAnimationFrame(animPoem);
 }
 
-// ── 渲染侧栏 ──────────────────────────────────────────────────
-function renderSidebar() {
-  const list = document.getElementById('element-list');
-  list.innerHTML = '';
-  const q = state.searchQuery.toLowerCase();
+function getBubbleStyle(name){
+  const el=ELEMENTS[name]; if(!el)return{bg:'rgba(255,255,255,0.3)',sh:'rgba(5,68,94,0.1)'};
+  if(el.tier===1)return{bg:'rgba(255,255,255,0.42)',sh:el.glow+'30'};
+  if(el.tier===2)return{bg:el.color+'2e',sh:el.glow+'30'};
+  if(el.tier===3)return{bg:el.color+'3a',sh:el.glow+'3a'};
+  return{bg:'rgba(117,230,218,0.28)',sh:'rgba(24,154,180,0.28)'};
+}
 
-  [...state.unlocked].forEach((name, i) => {
-    const el = ELEMENTS[name];
-    if (!el) return;
-    if (state.filterTier !== 0 && el.tier !== state.filterTier) return;
-    if (q && !name.includes(q)) return;
-
-    const div = document.createElement('div');
-    div.className = 'element-item' + (el.isPoem ? ' is-poem' : '');
-    div.style.animationDelay = `${i * 0.02}s`;
-    div.draggable = true;
-    div.dataset.name = name;
-
-    const dot = document.createElement('div');
-    dot.className = 'el-dot';
-    dot.style.cssText = `background:${el.color};color:${el.glow};`;
-
-    const nameEl = document.createElement('span');
-    nameEl.className = 'el-name';
-    nameEl.textContent = name;
-
-    const right = document.createElement('div');
-    right.style.display = 'flex'; right.style.gap = '4px'; right.style.alignItems = 'center';
-
-    if (state.newlyUnlocked.has(name)) {
-      const badge = document.createElement('span');
-      badge.className = 'el-new'; badge.textContent = 'NEW';
-      right.appendChild(badge);
-    }
-
-    const tierSpan = document.createElement('span');
-    tierSpan.className = 'el-tier';
-    tierSpan.textContent = el.isPoem ? '诗' : `L${el.tier}`;
-    tierSpan.style.color = [,'#FFD700','#80DEEA','#CE93D8','#FFB74D'][el.tier];
-    right.appendChild(tierSpan);
-
-    div.append(dot, nameEl, right);
-
-    // 拖拽到工作台
-    div.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('element-name', name);
-    });
-
-    // 点击也可以添加
-    div.addEventListener('click', () => addToWorkspace(name));
-
-    list.appendChild(div);
+function renderSidebar(){
+  const list=document.getElementById('element-list'); list.innerHTML='';
+  const q=state.searchQuery.toLowerCase(); let idx=0;
+  [...state.unlocked].forEach(name=>{
+    const el=ELEMENTS[name]; if(!el)return;
+    if(state.filterTier!==0&&el.tier!==state.filterTier)return;
+    if(q&&!name.includes(q))return;
+    const div=document.createElement('div');
+    div.className='element-item'+(el.isPoem?' is-poem':'');
+    div.style.animationDelay=`${idx*.025}s`; div.draggable=true; div.dataset.name=name; div.textContent=name;
+    if(state.newlyUnlocked.has(name)){ const d=document.createElement('span'); d.className='el-new-dot'; div.appendChild(d); }
+    div.addEventListener('dragstart',e=>e.dataTransfer.setData('element-name',name));
+    div.addEventListener('click',()=>addBubble(name));
+    list.appendChild(div); idx++;
   });
 }
 
-// ── 工作台操作 ────────────────────────────────────────────────
-function addToWorkspace(name, x, y) {
-  const ws = document.getElementById('workspace');
-  const rect = ws.getBoundingClientRect();
-  const el = ELEMENTS[name];
-
-  const card = document.createElement('div');
-  card.className = 'ws-element new-element';
-  card.dataset.name = name;
-  card.style.cssText = `
-    --el-glow: ${el.glow};
-    left: ${x ?? (80 + Math.random() * (rect.width - 200))}px;
-    top: ${y ?? (80 + Math.random() * (rect.height - 160))}px;
-    border-color: ${el.color}33;
-    box-shadow: 0 0 12px ${el.glow}33;
-  `;
-
-  const dot = document.createElement('div');
-  dot.className = 'ws-dot';
-  dot.style.cssText = `background:${el.color};--el-glow:${el.glow};`;
-
-  const nameEl = document.createElement('span');
-  nameEl.className = 'ws-name';
-  nameEl.textContent = name;
-
-  const close = document.createElement('span');
-  close.className = 'ws-close';
-  close.textContent = '✕';
-  close.addEventListener('click', e => { e.stopPropagation(); card.remove(); checkWsLabel(); });
-
-  card.append(dot, nameEl, close);
-  setupDrag(card);
-  ws.appendChild(card);
-
-  checkWsLabel();
-  setTimeout(() => card.classList.remove('new-element'), 500);
+function addBubble(name,x,y){
+  const ws=document.getElementById('workspace'), rect=ws.getBoundingClientRect(), el=ELEMENTS[name], s=getBubbleStyle(name);
+  const fd=(3.5+Math.random()*2).toFixed(1)+'s', fdel=(Math.random()*2).toFixed(1)+'s';
+  const bubble=document.createElement('div');
+  bubble.className='ws-bubble bubble-pop'; bubble.dataset.name=name;
+  bubble.style.cssText=`left:${x??(60+Math.random()*(rect.width-180))}px;top:${y??(60+Math.random()*(rect.height-140))}px;--fd:${fd};--fdelay:-${fdel};`;
+  const body=document.createElement('div'); body.className='bubble-body';
+  body.style.cssText=`background:${s.bg};box-shadow:0 4px 16px ${s.sh},inset 0 1px 0 rgba(255,255,255,0.6),inset 0 -1px 0 rgba(5,68,94,0.05);border:1px solid rgba(255,255,255,0.5);backdrop-filter:blur(10px);`;
+  const nm=document.createElement('span'); nm.className='bubble-name'; nm.textContent=name;
+  const cl=document.createElement('span'); cl.className='bubble-close'; cl.textContent='×';
+  cl.addEventListener('click',e=>{ e.stopPropagation(); bubble.remove(); checkHint(); });
+  body.append(nm,cl); bubble.appendChild(body);
+  setupDrag(bubble); ws.appendChild(bubble); checkHint();
+  setTimeout(()=>bubble.classList.remove('bubble-pop'),500);
 }
 
-function checkWsLabel() {
-  const label = document.getElementById('ws-label');
-  const hasCards = document.querySelector('.ws-element') !== null;
-  label.classList.toggle('hidden', hasCards);
+function checkHint(){ document.getElementById('ws-hint').classList.toggle('hidden',!!document.querySelector('.ws-bubble')); }
+
+function setupDrag(bubble){
+  let on=false,ox,oy;
+  bubble.addEventListener('mousedown',e=>{ if(e.target.classList.contains('bubble-close'))return; on=true; bubble.classList.add('dragging-now'); const r=bubble.getBoundingClientRect(); ox=e.clientX-r.left; oy=e.clientY-r.top; bubble.style.zIndex=200; bubble.style.transition='none'; e.preventDefault(); });
+  document.addEventListener('mousemove',e=>{ if(!on)return; const ws=document.getElementById('workspace'),wr=ws.getBoundingClientRect(); bubble.style.left=(e.clientX-wr.left-ox)+'px'; bubble.style.top=(e.clientY-wr.top-oy)+'px'; spawnDrop(e.clientX-wr.left,e.clientY-wr.top,ELEMENTS[bubble.dataset.name]?.color||'#75E6DA'); });
+  document.addEventListener('mouseup',()=>{ if(!on)return; on=false; bubble.classList.remove('dragging-now'); bubble.style.zIndex=10; checkCollision(bubble); });
 }
 
-// ── 拖拽 ──────────────────────────────────────────────────────
-function setupDrag(card) {
-  let isDragging = false, ox, oy, lastX, lastY;
-  let particles = [];
-
-  card.addEventListener('mousedown', e => {
-    if (e.target.classList.contains('ws-close')) return;
-    isDragging = true;
-    const rect = card.getBoundingClientRect();
-    ox = e.clientX - rect.left;
-    oy = e.clientY - rect.top;
-    card.style.zIndex = 100;
-    card.style.transition = 'none';
-    e.preventDefault();
-  });
-
-  document.addEventListener('mousemove', e => {
-    if (!isDragging) return;
-    const ws = document.getElementById('workspace');
-    const wsRect = ws.getBoundingClientRect();
-    const nx = e.clientX - wsRect.left - ox;
-    const ny = e.clientY - wsRect.top - oy;
-    card.style.left = nx + 'px';
-    card.style.top = ny + 'px';
-
-    // 拖尾粒子
-    if (lastX !== undefined) {
-      spawnTrailParticle(e.clientX - wsRect.left, e.clientY - wsRect.top, ELEMENTS[card.dataset.name]?.color || '#fff');
-    }
-    lastX = nx; lastY = ny;
-  });
-
-  document.addEventListener('mouseup', e => {
-    if (!isDragging) return;
-    isDragging = false;
-    card.style.zIndex = 10;
-    checkCollision(card);
-  });
+function spawnDrop(x,y,color){
+  const ws=document.getElementById('workspace'), d=document.createElement('div'); d.className='trail-drop';
+  const s=Math.random()*5+2; d.style.cssText=`left:${x}px;top:${y}px;width:${s}px;height:${s}px;background:${color};opacity:0.35;`; ws.appendChild(d); setTimeout(()=>d.remove(),1000);
 }
 
-function spawnTrailParticle(x, y, color) {
-  const ws = document.getElementById('workspace');
-  const p = document.createElement('div');
-  p.className = 'particle';
-  const size = Math.random() * 4 + 2;
-  p.style.cssText = `left:${x}px;top:${y}px;width:${size}px;height:${size}px;background:${color};opacity:.5;`;
-  ws.appendChild(p);
-  setTimeout(() => p.remove(), 800);
-}
-
-// ── 碰撞检测 ─────────────────────────────────────────────────
-function checkCollision(movedCard) {
-  const ws = document.getElementById('workspace');
-  const cards = [...ws.querySelectorAll('.ws-element')];
-  const r1 = movedCard.getBoundingClientRect();
-  const wsRect = ws.getBoundingClientRect();
-
-  for (const other of cards) {
-    if (other === movedCard) continue;
-    const r2 = other.getBoundingClientRect();
-    const overlap = !(r1.right < r2.left || r1.left > r2.right || r1.bottom < r2.top || r1.top > r2.bottom);
-    if (!overlap) continue;
-
-    const a = movedCard.dataset.name;
-    const b = other.dataset.name;
-    const result = lookupCombo(a, b);
-
-    // 爆炸位置
-    const cx = (r1.left + r1.right) / 2 - wsRect.left;
-    const cy = (r1.top + r1.bottom) / 2 - wsRect.top;
-
-    if (result) {
-      // 成功组合
-      spawnRipple(cx, cy, ELEMENTS[result]?.color || '#fff');
-      movedCard.remove(); other.remove();
-
-      const isNew = !state.unlocked.has(result);
-      if (isNew) {
-        state.unlocked.add(result);
-        state.newlyUnlocked.add(result);
-        renderSidebar();
-        updateStats();
-        setTimeout(() => state.newlyUnlocked.delete(result), 5000);
-      }
-
-      const resEl = ELEMENTS[result];
-      setTimeout(() => {
-        addToWorkspace(result, cx - 50, cy - 20);
-        if (resEl?.isPoem) {
-          setTimeout(() => showPoem(resEl), 400);
-        } else if (isNew) {
-          showToast(`✦ 解锁：${result}`);
-        }
-      }, 200);
+function checkCollision(moved){
+  const ws=document.getElementById('workspace'), wr=ws.getBoundingClientRect(), r1=moved.getBoundingClientRect();
+  for(const other of ws.querySelectorAll('.ws-bubble')){
+    if(other===moved)continue;
+    const r2=other.getBoundingClientRect();
+    if(r1.right<r2.left||r1.left>r2.right||r1.bottom<r2.top||r1.top>r2.bottom)continue;
+    const a=moved.dataset.name, b=other.dataset.name, res=lookupCombo(a,b);
+    const cx=(r1.left+r1.right)/2-wr.left, cy=(r1.top+r1.bottom)/2-wr.top;
+    if(res){
+      spawnRipple(cx,cy,ELEMENTS[res]?.color||'#75E6DA'); moved.remove(); other.remove();
+      const isNew=!state.unlocked.has(res);
+      if(isNew){ state.unlocked.add(res); state.newlyUnlocked.add(res); renderSidebar(); setTimeout(()=>state.newlyUnlocked.delete(res),6000); }
+      setTimeout(()=>{ addBubble(res,cx-50,cy-24); if(ELEMENTS[res]?.isPoem)setTimeout(()=>showPoem(ELEMENTS[res]),450); else if(isNew)showToast('✦ 解锁  '+res); },220);
     } else {
-      // 失败
-      spawnRipple(cx, cy, '#555');
-      const msg = FAIL_MESSAGES[Math.floor(Math.random() * FAIL_MESSAGES.length)];
-      showToast(msg);
-      // 轻微弹开
-      const mx = parseFloat(movedCard.style.left);
-      const my = parseFloat(movedCard.style.top);
-      movedCard.style.transition = 'left .3s, top .3s';
-      movedCard.style.left = (mx - 30) + 'px';
-      movedCard.style.top = (my - 10) + 'px';
-      setTimeout(() => { movedCard.style.transition = 'none'; }, 350);
+      spawnRipple(cx,cy,'rgba(255,255,255,0.4)'); showToast(FAIL_MESSAGES[Math.floor(Math.random()*FAIL_MESSAGES.length)]);
+      const mx=parseFloat(moved.style.left),my=parseFloat(moved.style.top);
+      moved.style.transition='left .3s,top .3s'; moved.style.left=(mx-28)+'px'; moved.style.top=(my-8)+'px';
+      setTimeout(()=>moved.style.transition='none',350);
     }
     return;
   }
 }
 
-function spawnRipple(x, y, color) {
-  const ws = document.getElementById('workspace');
-  const r = document.createElement('div');
-  r.className = 'ripple';
-  r.style.cssText = `left:${x}px;top:${y}px;width:60px;height:60px;border:2px solid ${color};`;
-  ws.appendChild(r);
-  setTimeout(() => r.remove(), 700);
+function spawnRipple(x,y,color){
+  const ws=document.getElementById('workspace'), r=document.createElement('div'); r.className='ripple';
+  r.style.cssText=`left:${x}px;top:${y}px;width:50px;height:50px;border:1.5px solid ${color};`; ws.appendChild(r); setTimeout(()=>r.remove(),800);
 }
 
-// ── 诗词展示 ─────────────────────────────────────────────────
-function showPoem(el) {
-  document.getElementById('poem-text').textContent = el.poem;
-  document.getElementById('poem-author').textContent = el.author;
-  document.getElementById('poem-context').textContent = el.context;
-  const overlay = document.getElementById('poem-overlay');
-  overlay.dataset.colorKey = el.particles || 'gold';
-  overlay.classList.add('show');
-  pCanvas.width = window.innerWidth;
-  pCanvas.height = window.innerHeight;
-  spawnPoemParticles(el.particles || 'gold');
-  animatePoemParticles();
+function showPoem(el){
+  document.getElementById('poem-text').textContent=el.poem;
+  document.getElementById('poem-author').textContent=el.author;
+  document.getElementById('poem-context').textContent=el.context;
+  const ov=document.getElementById('poem-overlay'); ov.dataset.colorKey=el.particles||'blue'; ov.classList.add('show');
+  pC.width=window.innerWidth; pC.height=window.innerHeight; spawnPoem(el.particles||'blue'); animPoem();
 }
+document.getElementById('poem-close').addEventListener('click',()=>{ document.getElementById('poem-overlay').classList.remove('show'); cancelAnimationFrame(pAnim); pX.clearRect(0,0,pC.width,pC.height); });
 
-document.getElementById('poem-close').addEventListener('click', () => {
-  document.getElementById('poem-overlay').classList.remove('show');
-  cancelAnimationFrame(pAnimId);
-  pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
-});
+let toastT;
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2800); }
 
-// ── 吐司提示 ─────────────────────────────────────────────────
-let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
-}
+const workspace=document.getElementById('workspace');
+workspace.addEventListener('dragover',e=>e.preventDefault());
+workspace.addEventListener('drop',e=>{ e.preventDefault(); const n=e.dataTransfer.getData('element-name'); if(!n)return; const wr=workspace.getBoundingClientRect(); addBubble(n,e.clientX-wr.left-50,e.clientY-wr.top-20); });
+document.getElementById('search').addEventListener('input',e=>{ state.searchQuery=e.target.value; renderSidebar(); });
+document.querySelectorAll('.tier-tab').forEach(tab=>tab.addEventListener('click',()=>{ document.querySelectorAll('.tier-tab').forEach(t=>t.classList.remove('active')); tab.classList.add('active'); state.filterTier=parseInt(tab.dataset.tier); renderSidebar(); }));
+document.getElementById('clear-btn').addEventListener('click',()=>{ document.querySelectorAll('.ws-bubble').forEach(b=>b.remove()); checkHint(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape')document.getElementById('poem-close').click(); });
 
-// ── 统计 ─────────────────────────────────────────────────────
-function updateStats() {
-  const total = Object.keys(ELEMENTS).length;
-  const poems = [...state.unlocked].filter(k => ELEMENTS[k]?.isPoem).length;
-  document.getElementById('unlocked-count').textContent = state.unlocked.size;
-  document.getElementById('total-count').textContent = total;
-  document.getElementById('poem-count').textContent = poems;
-  document.getElementById('progress-bar').style.width = (state.unlocked.size / total * 100) + '%';
-}
-
-// ── 侧栏拖放到工作台 ─────────────────────────────────────────
-const workspace = document.getElementById('workspace');
-workspace.addEventListener('dragover', e => e.preventDefault());
-workspace.addEventListener('drop', e => {
-  e.preventDefault();
-  const name = e.dataTransfer.getData('element-name');
-  if (!name) return;
-  const wsRect = workspace.getBoundingClientRect();
-  addToWorkspace(name, e.clientX - wsRect.left - 50, e.clientY - wsRect.top - 20);
-});
-
-// ── 搜索 & 筛选 ───────────────────────────────────────────────
-document.getElementById('search').addEventListener('input', e => {
-  state.searchQuery = e.target.value;
-  renderSidebar();
-});
-
-document.querySelectorAll('.tier-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tier-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    state.filterTier = parseInt(tab.dataset.tier);
-    renderSidebar();
-  });
-});
-
-// ── 清空工作台 ────────────────────────────────────────────────
-document.getElementById('clear-btn').addEventListener('click', () => {
-  document.querySelectorAll('.ws-element').forEach(el => el.remove());
-  checkWsLabel();
-});
-
-// ── 动画循环 ─────────────────────────────────────────────────
-let t = 0;
-function loop() {
-  t += 1;
-  drawBg(t);
-  requestAnimationFrame(loop);
-}
-
-// ── 初始化 ───────────────────────────────────────────────────
-initStars();
-loop();
-renderSidebar();
-updateStats();
-
-window.addEventListener('resize', () => {
-  initStars();
-  if (document.getElementById('poem-overlay').classList.contains('show')) {
-    pCanvas.width = window.innerWidth;
-    pCanvas.height = window.innerHeight;
-  }
-});
-
-// 键盘关闭诗词
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') document.getElementById('poem-close').click();
-});
+let t=0;
+function loop(){ t++; drawBg(t); requestAnimationFrame(loop); }
+initBg(); loop(); renderSidebar();
+window.addEventListener('resize',initBg);
 </script>
 </body>
 </html>
